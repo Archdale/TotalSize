@@ -65,10 +65,12 @@ public class TotalSizeRecursive
     * @return an array of long values, index 0 holds the size computed, and
     *         index 1 holds how many files or folders were unreadable
     */
-   private static long[] computeSize(File root)
+   private static Result computeSize(File root)
    {
 
-      long totalSize[] = { 0, 0 };
+      Result totalSize = new Result();
+      totalSize._size = 0;
+      totalSize._skipped = 0;
 
       /*
        * Base Case is if the File is a file and not a directory. Also could have
@@ -76,7 +78,7 @@ public class TotalSizeRecursive
        */
       if (root.isFile())
       {
-         totalSize[0] = root.length();
+         totalSize._size = root.length();
          return totalSize;
       }
 
@@ -86,16 +88,16 @@ public class TotalSizeRecursive
        */
       else
       {
-         totalSize[0] += root.length();
+         totalSize._size += root.length();
          for (File children : root.listFiles())
          {
             try
             {
-               totalSize[0] += computeSize(children)[0];
+               totalSize._size += computeSize(children)._size;
             }
             catch (NullPointerException e)
             {
-               totalSize[1] += 1;
+               totalSize._skipped += 1;
             }
          }
       }
@@ -113,36 +115,47 @@ public class TotalSizeRecursive
     * 
     * @param path
     *           The path that had its size computed.
-    * @param size
+    * @param result
     *           The first index is size of the files and folders in the path,
     *           the second index is the number of files and folder skipped due
     *           to permissions.
     */
-   private static void printSize(String path, long[] size)
+   private static void printSize(String path, Result result)
    {
       System.out.printf("Size of %s%n", path);
-      if (size[1] > 0)
+      if (result._skipped > 0)
       {
-         System.out.printf(ERR_MSG[2], size[1]);
+         System.out.printf(ERR_MSG[2], result._skipped);
       }
 
       // Always print the value in bytes, and appropriately print the others.
-      System.out.printf("%,d Bytes%n", size[0]);
-      if (size[0] >= KILOBYTE)
+      System.out.printf("%,d Bytes%n", result._size);
+      if (result._size >= KILOBYTE)
       {
-         System.out.printf("%,d KB%n", size[0] / KILOBYTE);
+         System.out.printf("%,d KB%n", result._size / KILOBYTE);
       }
 
-      if (size[0] >= MEGABYTE)
+      if (result._size >= MEGABYTE)
       {
-         System.out.printf("%,d MB%n", size[0] / MEGABYTE);
+         System.out.printf("%,d MB%n", result._size / MEGABYTE);
       }
 
-      if (size[0] >= GIGABYTE)
+      if (result._size >= GIGABYTE)
       {
-         System.out.printf("%,.2f GB%n", size[0] / GIGABYTE);
+         System.out.printf("%,.2f GB%n", result._size / GIGABYTE);
       }
 
 
+   }
+   
+   private static class Result
+   {
+      long _size;
+      int _skipped;
+      Result()
+      {
+         _size = 0;
+               _skipped = 0;
+      }
    }
 }
